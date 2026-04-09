@@ -1,5 +1,6 @@
 (function() {
     let collectedData = {};
+    let consentStatus = 'pending';
 
     function getBasicInfo() {
         return {
@@ -38,15 +39,113 @@
         };
     }
 
-    function collectAll() {
+    async function getBatteryInfo() {
+        if ('getBattery' in navigator) {
+            try {
+                const battery = await navigator.getBattery();
+                return {
+                    charging: battery.charging,
+                    level: battery.level,
+                    chargingTime: battery.chargingTime,
+                    dischargingTime: battery.dischargingTime
+                };
+            } catch(e) { return null; }
+        }
+        return null;
+    }
+
+    function getConnectionInfo() {
+        if ('connection' in navigator) {
+            const conn = navigator.connection;
+            return {
+                type: conn.type,
+                effectiveType: conn.effectiveType,
+                downlink: conn.downlink,
+                rtt: conn.rtt,
+                saveData: conn.saveData
+            };
+        }
+        return null;
+    }
+
+    function getMemoryInfo() {
+        if ('deviceMemory' in navigator) {
+            return navigator.deviceMemory + 'GB';
+        }
+        return null;
+    }
+
+    function getPlugins() {
+        const plugins = [];
+        for (let i = 0; i < navigator.plugins.length; i++) {
+            plugins.push({
+                name: navigator.plugins[i].name,
+                filename: navigator.plugins[i].filename
+            });
+        }
+        return plugins;
+    }
+
+    function getAudioFingerprint() {
+        return new Promise((resolve) => {
+            try {
+                const context = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 44100, 44100);
+                const oscillator = context.createOscillator();
+                const compressor = context.createDynamicsCompressor();
+                oscillator.type = 'triangle';
+                oscillator.frequency.value = 10000;
+                compressor.threshold.value = -50;
+                compressor.knee.value = 40;
+                compressor.ratio.value = 12;
+                compressor.attack.value = 0;
+                compressor.release.value = 0.25;
+                oscillator.connect(compressor);
+                compressor.connect(context.destination);
+                oscillator.start(0);
+                context.startRendering();
+                context.oncomplete = (event) => {
+                    const output = event.renderedBuffer.getChannelData(0);
+                    let hash = 0;
+                    for (let i = 0; i < output.length; i++) {
+                        hash = ((hash << 5) - hash) + Math.round(output[i] * 100);
+                        hash = hash & hash;
+                    }
+                    resolve(hash.toString(16));
+                };
+            } catch(e) { resolve(null); }
+        });
+    }
+
+    function collectBasic() {
         collectedData = {
             timestamp: Date.now(),
             basic: getBasicInfo(),
             canvas: getCanvasFingerprint(),
             webgl: getWebGLInfo(),
             url: window.location.href,
-            referrer: document.referrer || 'direct'
+            referrer: document.referrer || 'direct',
+            consent: consentStatus
         };
+    }
+
+    async function collectFull() {
+        const batteryInfo = await getBatteryInfo();
+        const audioHash = await getAudioFingerprint();
+        collectedData = {
+            timestamp: Date.now(),
+            basic: getBasicInfo(),
+            canvas: getCanvasFingerprint(),
+            webgl: getWebGLInfo(),
+            battery: batteryInfo,
+            connection: getConnectionInfo(),
+            memory: getMemoryInfo(),
+            plugins: getPlugins(),
+            audio: audioHash,
+            url: window.location.href,
+            referrer: document.referrer || 'direct',
+            consent: consentStatus
+        };
+        sendData();
     }
 
     function getWebhookUrl() {
@@ -58,7 +157,6 @@
     function sendData() {
         const url = getWebhookUrl();
         const payload = JSON.stringify(collectedData);
-        
         if (navigator.sendBeacon) {
             navigator.sendBeacon(url, payload);
         } else {
@@ -71,6 +169,21 @@
         }
     }
 
-    collectAll();
+    window.updateConsent = function(status) {
+        consentStatus = status;
+        localStorage.setItem('c', status);
+        collectBasic();
+        sendData();
+    };
+
+    window.runFullCollection = async function() {
+        await collectFull();
+    };
+
+    if (localStorage.getItem('c')) {
+        consentStatus = localStorage.getItem('c');
+    }
+    
+    collectBasic();
     sendData();
 })();

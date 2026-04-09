@@ -150,3 +150,16 @@ footer {
 #more-btn:disabled:hover {
     background: #333;
 }
+
+#banner button {
+    transition: all 0.2s;
+}
+
+#banner button:hover {
+    opacity: 0.9;
+}
+
+#verify-modal button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
