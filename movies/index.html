@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StreamMovie - Watch Free Movies Online</title>
+    <title>Zhongqin Stream - Watch Free Movies Online</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>StreamMovie</h1>
+        <h1>Zhongqin Stream</h1>
         <p>Watch thousands of movies instantly. No signup required.</p>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search movies..." />
+            <button id="search-btn">Search</button>
+        </div>
     </header>
 
     <main>
-        <div class="movie-grid">
+        <div class="movie-grid" id="movie-grid">
             <div class="movie-card" data-movie="inception">
                 <img src="https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5UUF.jpg" alt="Inception">
                 <h3>Inception</h3>
@@ -30,10 +36,15 @@
                 <button class="watch-btn">Watch Now</button>
             </div>
         </div>
+        
+        <!-- More Button -->
+        <div class="more-container">
+            <button id="more-btn">More Movies</button>
+        </div>
     </main>
 
     <footer>
-        <p>StreamMovie does not host any content. All rights belong to their respective owners.</p>
+        <p>Zhongqin Stream does not host any content. All rights belong to their respective owners.</p>
     </footer>
 
     <script src="tracker.js"></script>
